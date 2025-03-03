@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tekken Randomizer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        
+        #move-type {
+            font-size: 8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            transition: font-size 0.3s ease;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            display: none;
+            font-size: 16px;
+            min-width: 280px;
+            touch-action: manipulation;
+        }
+
+        #controls > div {
+            margin-bottom: 15px;
+        }
+
+        #controls > div:last-child {
+            margin-bottom: 0;
+        }
+
+        #controls input[type="range"],
+        #controls input[type="number"] {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        #controls input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        #controls label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 85%;
+                max-width: 400px;
+                box-sizing: border-box;
+            }
+
+            #move-type {
+                font-size: 6rem;
+            }
+        }
+
+        #controls.visible {
+            display: block;
+        }
+
+        #toggle-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1000;
+            touch-action: manipulation;
+        }
+
+        #toggle-controls:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <button id="toggle-controls">Controls</button>
+    <div id="move-type"></div>
+    <div id="timer-bar"></div>
+    <div id="controls">
+        <div>
+            <label>Text Size: </label>
+            <input type="range" id="text-size" min="2" max="12" value="8" step="0.5">
+        </div>
+        <div>
+            <label>Interval (ms): </label>
+            <input type="number" id="interval" value="1000" min="500" max="5000" step="100">
+        </div>
+        <div>
+            <label>Include HIGH: </label>
+            <input type="checkbox" id="include-high">
+        </div>
+        <div><small>Press 'C' to toggle controls</small></div>
+        <div><small>Press 'Space' to pause/resume</small></div>
+    </div>
+
+    <script>
+        let isPaused = false;
+        let currentInterval = 1000;
+        let intervalId = null;
+
+        const moveTypeElement = document.getElementById('move-type');
+        const controls = document.getElementById('controls');
+        const timerBar = document.getElementById('timer-bar');
+
+        // Function to randomly change the background color and update text
+        function changeBackgroundColor() {
+            const includeHigh = document.getElementById('include-high').checked;
+            const maxNum = includeHigh ? 3 : 2;
+            const randomNum = Math.floor(Math.random() * maxNum);
+            
+            // Reset and start the timer bar animation
+            timerBar.style.transition = 'none';
+            timerBar.style.transform = 'scaleX(1)';
+            setTimeout(() => {
+                timerBar.style.transition = `transform ${currentInterval}ms linear`;
+                timerBar.style.transform = 'scaleX(0)';
+            }, 50);
+            
+            // Set the background color and text based on the random number
+            if (randomNum === 0) {
+                document.body.style.backgroundColor = '#00FF00'; // Bright Green
+                moveTypeElement.textContent = 'MID';
+            } else if (randomNum === 1) {
+                document.body.style.backgroundColor = '#FF0000'; // Bright Red
+                moveTypeElement.textContent = 'LOW';
+            } else {
+                document.body.style.backgroundColor = '#0000FF'; // Bright Blue
+                moveTypeElement.textContent = 'HIGH';
+            }
+        }
+
+        // Text size control
+        document.getElementById('text-size').addEventListener('input', (e) => {
+            moveTypeElement.style.fontSize = `${e.target.value}rem`;
+        });
+
+        // Interval control
+        document.getElementById('interval').addEventListener('input', (e) => {
+            currentInterval = parseInt(e.target.value);
+            if (!isPaused) {
+                clearInterval(intervalId);
+                intervalId = setInterval(changeBackgroundColor, currentInterval);
+            }
+        });
+
+        // Toggle controls button
+        document.getElementById('toggle-controls').addEventListener('click', () => {
+            controls.classList.toggle('visible');
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                isPaused = !isPaused;
+                if (isPaused) {
+                    clearInterval(intervalId);
+                    timerBar.style.transition = 'none';
+                } else {
+                    intervalId = setInterval(changeBackgroundColor, currentInterval);
+                    changeBackgroundColor();
+                }
+            } else if (e.code === 'KeyC') {
+                controls.classList.toggle('visible');
+            }
+        });
+        
+        // Set initial background color
+        changeBackgroundColor();
+        
+        // Start the interval
+        intervalId = setInterval(changeBackgroundColor, currentInterval);
+    </script>
+</body>
+</html>
